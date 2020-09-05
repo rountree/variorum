@@ -31,3 +31,10 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 message(STATUS "Updated CMAKE_CXX_FLAGS to \"${CMAKE_CXX_FLAGS}\"")
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
+	message(STATUS "Debug build: Updated CMAKE_C_FLAGS to \"${CMAKE_C_FLAGS}\"")
+	message(STATUS "Debug build: Updated CMAKE_CXX_FLAGS to \"${CMAKE_CXX_FLAGS}\"")
+endif()
