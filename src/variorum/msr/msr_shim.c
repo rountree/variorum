@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Lawrence Livermore National Security, LLC and other
+// Copyright 2020-2021 Lawrence Livermore National Security, LLC and other
 // // Variorum Project Developers. See the top-level LICENSE file for details.
 // //
 // // SPDX-License-Identifier: MIT
@@ -15,13 +15,23 @@
 #define _GNU_SOURCE
 
 #include <dlfcn.h>	// dlopen
-#include <stdio.h>	// fprintf
+#include <stdio.h>	// fprintf, sscanf
 #include <stdarg.h>	// va_start(), va_end()
 #include <sys/types.h>	// open(), stat()
 #include <sys/stat.h>	// open(), stat()
 #include <fcntl.h>	// open()
 #include <sys/ioctl.h>	// ioctl()
 #include <unistd.h>	// close(), pread(), pwrite(), stat()
+
+#include "msr_core.h"
+#include "063f_msr_samples.h"
+enum{
+	MSR_ALLOWLIST_IDX=0,
+	MSR_BATCH_IDX=1,
+	MSR_SAFE_IDX=2,
+	MSR_STOCK=3,		// Created by the stock msr kernel module
+	MSR_NUM_IDXES=4
+};
 
 // Need pread, pwrite, ioctl, open, close, stat.
 
@@ -118,17 +128,53 @@ pwrite(int fd, const void *buf, size_t count, off_t offset){
 
 int
 ioctl(int fd, unsigned long request, ...){
+	// This is going to be a bit squirrely, as there's no way of knowing
+	// how many arguments are being passed along unless we're able to
+	// inspect the code at the receiving end.  Traditionally, the third
+	// and final argument in a char *argp---the man page says so---
+	// but if you're seeing weird ioctl bugs, your driver might be of a
+	// less traditional bent.
 	char *arg_p = NULL;
 	va_list ap;
 	va_start(ap, request);
 	arg_p = va_arg(ap, char*);
 	va_end(ap);
-	return real_ioctl( fd, request, arg_p );
+
+	if( fd==MSR_BATCH_FD && request==X86_IOC_MSR_BATCH ){
+		// do batch processing here.
+		return 0;
+	}else{
+		return real_ioctl( fd, request, arg_p );
+	}
 }
 
 int
 stat(const char *pathname, struct stat *statbuf){
-	return real_stat( pathname, statbuf );
+	// The only think that msr_core.c:stat_module() checks is for
+	// S_IRUSR and S_IWUSR flags in statbuf.st_mode. All we'll do
+	// here is make sure it's an msr-related file, set those two
+	// bits and return success.
+	//
+	// Note that it might nice to have a user interface that allows
+	// for more flexibility during testing.
+
+	int rc=0;
+	int dummy_idx = 0;
+
+	if(
+		( 0 == strncmp( pathname, MSR_ALLOWLIST_PATH, strlen(MSR_ALLOWLIST_PATH) ) )
+		||
+		( 0 == strncmp( pathname, MSR_BATCH_PATH, strlen(MSR_BATCH_PATH) ) )
+		||
+		( 1 == sscanf( pathname, MSR_STOCK_PATH_FMT, &dummy_idx ) )
+		||
+		( 1 == sscanf( pathname, MSR_SAFE_PATH_FMT, &dummy_idx ) )
+	){
+		statbuf.st_mode |= ( S_IRUSR | S_IWUSR );
+		return rc;
+	}else{
+		return real_stat( pathname, statbuf );
+	}
 }
 
 

@@ -15,6 +15,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${variorum_includes})
 
 set( msr_shim_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/msr_core.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/063f_msr_samples.h
   CACHE INTERNAL "")
 
 set( msr_shim_sources
