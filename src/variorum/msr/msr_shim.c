@@ -22,15 +22,37 @@
 #include <fcntl.h>	// open()
 #include <sys/ioctl.h>	// ioctl()
 #include <unistd.h>	// close(), pread(), pwrite(), stat()
+#include <stdint.h>	// uint64_t and friends
+#include <inttypes.h>	// PRIx64 and friends
 
 #include "msr_core.h"
 #include "063f_msr_samples.h"
-enum{
-	MSR_ALLOWLIST_IDX=0,
-	MSR_BATCH_IDX=1,
-	MSR_SAFE_IDX=2,
-	MSR_STOCK=3,		// Created by the stock msr kernel module
-	MSR_NUM_IDXES=4
+
+// This can be made arbitrarily more complicated.
+enum {
+	ALLOWLIST_FD=4097,
+	BATCH_FD=4098,
+	STOCK_FD=4099,
+	SAFE_FD=5000
+};
+
+enum {
+	ALLOWLIST_IDX=0,
+	BATCH_IDX,
+	STOCK_IDX,
+	SAFE_IDX,
+	NUM_FILETYPES,
+};
+
+struct file{
+	int fd;
+	bool isopen;
+	mode_t init_mode;
+} files[NUM_FILETYPES] = {
+	{ ALLOWLIST_FD, false, S_IRUSR | S_IWUSR },
+	{ BATCH_FD,     false, S_IRUSR | S_IWUSR },
+	{ STOCK_FD,     false, S_IRUSR | S_IWUSR },
+	{ SAFE_FD,      false, S_IRUSR | S_IWUSR }
 };
 
 // Need pread, pwrite, ioctl, open, close, stat.
