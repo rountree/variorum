@@ -1,0 +1,36 @@
+The shim library allows Variorum to undergo unit
+tests in the absense of hardware.  It does so by
+intercepting C library (and other) calls and
+returning values consistent with what would be
+observed if the hardware in question were present.
+
+This approach can be quite powerful, and we have
+divided up the feature set along several axes.
+Each feature set has several possible levels of
+of sophistication.
+
+I.  Error handling
+    A.  All calls succeed.
+    B.  Variorum-level errors are caught and
+        generate expected error codes.
+    C.  Arbitrary errors can be injected via
+        environment variables.
+
+II. Fidelity
+    A.  All reads return a single magic number.
+        All write succeed and are ignored.
+    B.  Reads return realistic values for that
+        manufacturer, writes are recorded and
+        can be accessed with subsequent reads.
+    C.  Reads return realistic values for the
+        particular model.  Writes reflect the
+        application of reserved fields.
+
+III.System
+    A.  Mimics a generic model from a single
+        single vendor.
+    B.  Mimics specific models.
+    C.  Mimics underlying topology, CPUID.
+    D.  Mimics multi-component system.
+
+
